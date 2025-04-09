@@ -55,7 +55,7 @@ def fetch_events(page=0):
 
     data = response.json()
     events = data.get("_embedded", {}).get("events", [])
-    print(events[0])
+    # print(events[0])
     return events
 
 def save_data(events):
