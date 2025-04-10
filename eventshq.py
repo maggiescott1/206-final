@@ -1,11 +1,9 @@
 import requests
 import sqlite3
 
-# Database setup
 def setup_database(db_name):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
-    c.execute('DROP TABLE IF EXISTS events')  # Add this line
     c.execute('''
         CREATE TABLE IF NOT EXISTS events (
             event_id TEXT PRIMARY KEY,
@@ -20,7 +18,7 @@ def setup_database(db_name):
     return conn, c
 
 def fetch_events(limit=25):
-    ##json request from api website
+    ##json request format from api website
     response = requests.get(
     url="https://api.predicthq.com/v1/events",
     headers={
@@ -30,7 +28,9 @@ def fetch_events(limit=25):
     params={
     "limit": limit,
     "location_around.origin": "42.3297,-83.0425",
-    "category": "sports,expos,concerts,politics,performing-arts,festivals"
+    "category": "concerts",
+    "end.lte": "2025-03-31",
+    "start.gte": "2025-02-01"
     }
     )
     data = response.json()
@@ -41,7 +41,7 @@ def fetch_events(limit=25):
     for event in events:
 
         event_id = event.get('id')
-        date = event.get('updated', 'UNKNOWN').split('T')[0]
+        date = event.get('start', 'UNKNOWN').split('T')[0]
         title = event.get('title')
         category = event.get('category')
         location = event.get('geo', {}).get('address', {}).get('formatted_address', 'UNKNOWN')
@@ -61,7 +61,7 @@ def fetch_events(limit=25):
 def insert_event_data(c, valid_events):
     for event in valid_events:
         c.execute('''
-        INSERT INTO events (event_id, event_date, event_name, location, event_type, attendance)
+        INSERT OR IGNORE INTO events (event_id, event_date, event_name, location, event_type, attendance)
         VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             event['event_id'],
