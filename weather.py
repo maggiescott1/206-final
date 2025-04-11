@@ -75,10 +75,15 @@ def interpret_weather_code(code):
     else:
         return "Unknown weather code"
 
-# --- STEP 5: Print interpreted weather descriptions ---
+
+
+# --- STEP 5: Print interpreted weather descriptions + extra data ---
 for _, row in df.iterrows():
     description = interpret_weather_code(row["weather_code"])
-    print(f"On {row['date']} the weather was: {description}")
+    print(f"On {row['date']} the weather was: {description}. "
+          f"Precipitation hours: {row['precipitation_hours']}h, "
+          f"Min Temp: {row['temp_min']}°F, Max Temp: {row['temp_max']}°F")
+
 
 conn.close()
 
