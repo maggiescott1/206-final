@@ -1,54 +1,72 @@
 import sqlite3
+import pandas as pd
 
-# Sample list of your event data as (event_name, event_date, weather_description)
-events_weather = [
-    ("Sarah and the Sundays", "2025-03-30", "Rain: Slight, moderate and heavy intensity"),
-    ("Nicotine Dolls", "2025-03-27", "Mainly clear, partly cloudy, and overcast"),
-    ("The Main Squeeze with The Free Label", "2025-03-19", "Mainly clear, partly cloudy, and overcast"),
-    ("Last Dinosaurs with Tipling Rock", "2025-03-12", "Fog and depositing rime fog"),
-    ("MacKenzy MacKay", "2025-03-07", "Mainly clear, partly cloudy, and overcast"),
-    ("Aborted with Ingested", "2025-02-23", "Mainly clear, partly cloudy, and overcast"),
-    ("Kxllswxtch with Sxmpra", "2025-02-22", "Fog and depositing rime fog"),
-    ("CG5", "2025-02-01", "Mainly clear, partly cloudy, and overcast"),
-    ("Nettspend with Xaviersobased", "2025-03-31", "Mainly clear, partly cloudy, and overcast"),
-    ("The War and Treaty", "2025-03-29", "Drizzle: Light, moderate, and dense intensity"),
-    ("Tommy Richman (Moved from The Shelter)", "2025-03-28", "Drizzle: Light, moderate, and dense intensity"),
-    ("The War And Treaty in Detroit", "2025-03-28", "Drizzle: Light, moderate, and dense intensity"),
-    ("Whitechapel with Brand Of Sacrifice, 200 Stab Wounds, and Alluvial", "2025-03-26", "Mainly clear, partly cloudy, and overcast"),
-    ("Poppy", "2025-03-25", "Mainly clear, partly cloudy, and overcast"),
-    ("Poppy in Detroit", "2025-03-24", "Mainly clear, partly cloudy, and overcast"),
-    ("Counterparts with Pain Of Truth", "2025-03-22", "Drizzle: Light, moderate, and dense intensity"),
-    ("DJ Matt Bennett", "2025-03-21", "Mainly clear, partly cloudy, and overcast"),
-    ("Paleface Swiss with Stick To Your Guns", "2025-03-20", "Drizzle: Light, moderate, and dense intensity"),
-    ("Buckethead", "2025-03-17", "Mainly clear, partly cloudy, and overcast"),
-    ("Armor For Sleep", "2025-03-14", "Mainly clear, partly cloudy, and overcast"),
-    ("Stephen Wilson Jr.", "2025-03-13", "Mainly clear, partly cloudy, and overcast"),
-    ("Jack Kays with Remo Drive", "2025-03-09", "Mainly clear, partly cloudy, and overcast"),
-    ("Daniel Donato", "2025-03-09", "Mainly clear, partly cloudy, and overcast"),
-    ("Intervals with Vola", "2025-03-07", "Mainly clear, partly cloudy, and overcast"),
-    ("Ted Leo", "2025-03-02", "Mainly clear, partly cloudy, and overcast"),
+# --- Sample concert JSON converted to DataFrame ---
+concerts = [
+    {'event_id': '7hzYWTVCd5nSyC4Z5x', 'event_date': '2025-03-30', 'event_name': 'Sarah and the Sundays',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 853},
+    {'event_id': 'CMXCsAz3Lmgmdsud5u', 'event_date': '2025-03-27', 'event_name': 'Nicotine Dolls',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 843},
+    {'event_id': 'EDSrLjXmFQkWspTzKP', 'event_date': '2025-03-19', 'event_name': 'The Main Squeeze with The Free Label',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 919},
+    {'event_id': 'GpTEDRe3AyfxYFQ23t', 'event_date': '2025-03-12', 'event_name': 'Last Dinosaurs with Tipling Rock',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 919},
+    {'event_id': 'J7wV3oYz4YkoSJRFHP', 'event_date': '2025-03-07', 'event_name': 'MacKenzy MacKay',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 1033},
+    {'event_id': 'A2FkwGXNUNDzN3yFKZ', 'event_date': '2025-02-23', 'event_name': 'Aborted with Ingested',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 956},
+    {'event_id': 'CqgkB8tENkBmAMKewW', 'event_date': '2025-02-22', 'event_name': 'Kxllswxtch with Sxmpra',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 874},
+    {'event_id': '5cWqMpxMMMchVw8R9z', 'event_date': '2025-02-01', 'event_name': 'CG5',
+     'location': '431 E Congress St, Detroit, MI 48226, USA', 'event_type': 'concerts', 'attendance': 793},
+    {'event_id': '67ks8Z7hrASBFr4zw4', 'event_date': '2025-03-31', 'event_name': 'Nettspend with Xaviersobased',
+     'location': '431 East Congress Street\nDetroit, MI 48226\nUnited States of America', 'event_type': 'concerts', 'attendance': 1041},
 ]
 
-# Create DB connection and cursor
-conn = sqlite3.connect("event_weather.db")
+concert_df = pd.DataFrame(concerts)
+
+# --- Sample weather data (partial for demo purposes) ---
+weather_data = [
+    ("2025-03-30", 12.0, 61, 64.2, 48.3),
+    ("2025-03-27", 0.0, 1, 56.5, 23.0),
+    ("2025-03-19", 0.0, 1, 71.0, 55.7),
+    ("2025-03-12", 0.0, 45, 46.0, 26.4),
+    ("2025-03-07", 0.0, 1, 40.4, 25.9),
+    ("2025-02-23", 0.0, 1, 34.9, 22.3),
+    ("2025-02-22", 0.0, 45, 29.0, 18.3),
+    ("2025-02-01", 0.0, 1, 29.4, 20.5),
+    ("2025-03-31", 0.0, 1, 56.9, 39.7),
+]
+
+weather_df = pd.DataFrame(weather_data, columns=["event_date", "precipitation_hours", "weather_code", "temp_max", "temp_min"])
+
+# --- Merge concerts with weather data ---
+merged_df = pd.merge(concert_df, weather_df, on="event_date", how="inner")
+
+# --- Create SQLite DB and insert combined table ---
+conn = sqlite3.connect("combined_event_weather.db")
 cur = conn.cursor()
 
-# Create table
+cur.execute('DROP TABLE IF EXISTS concert_weather')
 cur.execute('''
-    CREATE TABLE IF NOT EXISTS events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_name TEXT,
+    CREATE TABLE IF NOT EXISTS concert_weather (
+        event_id TEXT PRIMARY KEY,
         event_date TEXT,
-        weather_description TEXT
+        event_name TEXT,
+        location TEXT,
+        event_type TEXT,
+        attendance INTEGER,
+        precipitation_hours REAL,
+        weather_code INTEGER,
+        temp_max REAL,
+        temp_min REAL
     )
 ''')
 
-# Insert data
-cur.executemany('''
-    INSERT INTO events (event_name, event_date, weather_description)
-    VALUES (?, ?, ?)
-''', events_weather)
+merged_df.to_sql('concert_weather', conn, if_exists='append', index=False)
 
-# Commit and close
 conn.commit()
 conn.close()
+
+
+
