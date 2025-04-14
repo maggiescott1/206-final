@@ -28,7 +28,7 @@ cur.execute("""
         id INTEGER PRIMARY KEY,
         date TEXT,
         precipitation_hours REAL,
-        weather_code INTEGER,
+        weather_code TEXT,
         temp_max REAL,
         temp_min REAL
     )
