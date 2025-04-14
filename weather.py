@@ -83,6 +83,9 @@ for _, row in df.iterrows():
     print(f"On {row['date']} the weather was: {description}. "
           f"Precipitation hours: {row['precipitation_hours']}h, "
           f"Min Temp: {row['temp_min']}°F, Max Temp: {row['temp_max']}°F")
+    
+
+
 
 
 conn.close()
