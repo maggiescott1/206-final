@@ -3,6 +3,8 @@ import sqlite3
 import json
 import pandas as pd
 
+#AI USAGE: struggled to figure out adding 25 new rows of data to the db everytime, so chat suggested creating an "offset" variable and updating with each run
+
 # --- STEP 1: Setup shared database ---
 DB_NAME = "weather_events.db"
 conn = sqlite3.connect(DB_NAME)
@@ -50,7 +52,7 @@ cur.execute("""
     )
 """)
 
-def fetch_events(limit=25):
+def fetch_events(limit=25, offset=0):
     response = requests.get(
         url="https://api.predicthq.com/v1/events",
         headers={
@@ -59,6 +61,7 @@ def fetch_events(limit=25):
         },
         params={
             "limit": limit,
+            "offset": offset,
             "location_around.origin": "42.3297,-83.0425",
             "category": "concerts",
             "end.lte": "2025-03-31",
@@ -85,7 +88,8 @@ def fetch_events(limit=25):
         })
     return valid_events
 
-events = fetch_events()
+offset = 75
+events = fetch_events(offset = offset)
 for event in events:
     cur.execute('''
         INSERT OR IGNORE INTO events (event_id, event_date, event_name, location, event_type, attendance)
@@ -99,9 +103,9 @@ for event in events:
         event['attendance']
     ))
 # --- STEP 4: Create unified event_weather table ---
-cur.execute('DROP TABLE IF EXISTS event_weather')
+
 cur.execute('''
-    CREATE TABLE event_weather (
+    CREATE TABLE IF NOT EXISTS event_weather (
         event_id TEXT PRIMARY KEY,
         event_date TEXT,
         event_name TEXT,
@@ -116,6 +120,8 @@ cur.execute('''
 ''')
 
 # --- STEP 5: Join events and weather tables, insert into event_weather ---
+
+new_rows = 0
 for event in events:
     # Get matching weather data for the event date
     cur.execute('''
@@ -134,7 +140,7 @@ for event in events:
 
     # Insert into unified table
     cur.execute('''
-        INSERT OR REPLACE INTO event_weather 
+        INSERT OR IGNORE INTO event_weather 
         (event_id, event_date, event_name, location, event_type, attendance, precipitation_hours, weather_code, temp_max, temp_min)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
@@ -149,5 +155,9 @@ for event in events:
         temp_max,
         temp_min
     ))
+    if cur.rowcount > 0:
+        new_rows += 1
 
 conn.commit()
+
+print(f"{new_rows} new rows added to db")
