@@ -98,61 +98,56 @@ for event in events:
         event['event_type'],
         event['attendance']
     ))
+# --- STEP 4: Create unified event_weather table ---
+cur.execute('DROP TABLE IF EXISTS event_weather')
+cur.execute('''
+    CREATE TABLE event_weather (
+        event_id TEXT PRIMARY KEY,
+        event_date TEXT,
+        event_name TEXT,
+        location TEXT,
+        event_type TEXT,
+        attendance INTEGER,
+        precipitation_hours REAL,
+        weather_code INTEGER,
+        temp_max REAL,
+        temp_min REAL
+    )
+''')
 
-# --- STEP 4: Join tables and interpret weather codes ---
-df = pd.read_sql_query('''
-    SELECT 
-        e.event_name, 
-        e.event_date, 
-        e.attendance, 
-        w.temp_max, 
-        w.temp_min, 
-        w.precipitation_hours,
-        w.weather_code
-    FROM events e
-    JOIN weather w ON e.event_date = w.date
-''', conn)
+# --- STEP 5: Join events and weather tables, insert into event_weather ---
+for event in events:
+    # Get matching weather data for the event date
+    cur.execute('''
+        SELECT precipitation_hours, weather_code, temp_max, temp_min 
+        FROM weather 
+        WHERE date = ?
+    ''', (event['event_date'],))
+    
+    weather_data = cur.fetchone()
 
-
-
-def interpret_weather_code(code):
-    if pd.isna(code):
-        return "Unknown weather code"
-    code = int(code)
-    if code == 0:
-        return "Clear sky"
-    elif code in [1, 2, 3]:
-        return "Mainly clear, partly cloudy, and overcast"
-    elif code in [45, 48]:
-        return "Fog and depositing rime fog"
-    elif code in [51, 53, 55]:
-        return "Drizzle: Light, moderate, and dense intensity"
-    elif code in [56, 57]:
-        return "Freezing Drizzle: Light and dense intensity"
-    elif code in [61, 63, 65]:
-        return "Rain: Slight, moderate and heavy intensity"
-    elif code in [66, 67]:
-        return "Freezing Rain: Light and heavy intensity"
-    elif code in [71, 73, 75]:
-        return "Snow fall: Slight, moderate, and heavy intensity"
-    elif code == 77:
-        return "Snow grains"
-    elif code in [80, 81, 82]:
-        return "Rain showers: Slight, moderate, and violent"
-    elif code in [85, 86]:
-        return "Snow showers slight and heavy"
-    elif code == 95:
-        return "Thunderstorm: Slight or moderate"
-    elif code in [96, 99]:
-        return "Thunderstorm with slight and heavy hail"
+    if weather_data:
+        precip_hours, weather_code, temp_max, temp_min = weather_data
     else:
-        return "Unknown weather code"
+        # If no matching weather data, set as None
+        precip_hours, weather_code, temp_max, temp_min = (None, None, None, None)
 
-for _, row in df.iterrows():
-    description = interpret_weather_code(row["weather_code"])
-    print(f"{row['event_name']} on {row['event_date']} had weather: {description}")
-
+    # Insert into unified table
+    cur.execute('''
+        INSERT OR REPLACE INTO event_weather 
+        (event_id, event_date, event_name, location, event_type, attendance, precipitation_hours, weather_code, temp_max, temp_min)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        event['event_id'],
+        event['event_date'],
+        event['event_name'],
+        event['location'],
+        event['event_type'],
+        event['attendance'],
+        precip_hours,
+        weather_code,
+        temp_max,
+        temp_min
+    ))
 
 conn.commit()
-conn.close()
-
