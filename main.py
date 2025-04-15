@@ -27,6 +27,7 @@ def make_weather_table(weather_data, cur, conn, limit=25):
     temp_max = weather_data["daily"]["temperature_2m_max"]
     temp_min = weather_data["daily"]["temperature_2m_min"]
 
+    cur.execute('DROP TABLE IF EXISTS weather')
     cur.execute("""
         CREATE TABLE IF NOT EXISTS weather (
             id INTEGER PRIMARY KEY,
