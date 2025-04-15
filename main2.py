@@ -5,8 +5,8 @@ def combine_databases(events_db, weather_db, combined_db):
     events_conn = sqlite3.connect(events_db)
     events_cur = events_conn.cursor()
 
-    weather_conn = sqlite3.connect(weather_db)
-    weather_cur = weather_conn.cursor()
+    # Attach the weather database to this connection
+    events_cur.execute(f"ATTACH DATABASE '{weather_db}' AS weather_db")
 
     # Connect to the new combined database
     combined_conn = sqlite3.connect(combined_db)
@@ -33,7 +33,7 @@ def combine_databases(events_db, weather_db, combined_db):
         SELECT e.event_id, e.event_date, e.event_name, e.location, e.event_type, e.attendance,
                w.precipitation_hours, w.weather_code, w.temp_max, w.temp_min
         FROM events e
-        LEFT JOIN weather w ON e.event_date = w.date
+        LEFT JOIN weather_db.weather w ON e.event_date = w.date
     ''')
 
     combined_data = events_cur.fetchall()
@@ -52,7 +52,6 @@ def combine_databases(events_db, weather_db, combined_db):
 
     # Close connections
     events_conn.close()
-    weather_conn.close()
     combined_conn.close()
 
 def main():
