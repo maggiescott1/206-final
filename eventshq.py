@@ -74,7 +74,8 @@ def insert_event_data(c, valid_events):
         )
 
 def main():
-    db_name = 'events_data.db'
+    # db_name = 'events_data.db'
+    db_name = 'combined_data.db'
     conn, c = setup_database(db_name)
     events = fetch_events(limit=25)
     insert_event_data(c, events)
