@@ -1,18 +1,20 @@
 import sqlite3
 
 def combine_databases(events_db, weather_db, combined_db):
-    # Connect to the existing databases
+    # Connect to both source databases
     events_conn = sqlite3.connect(events_db)
-    weather_conn = sqlite3.connect(weather_db)
-    combined_conn = sqlite3.connect(combined_db)
-
     events_cur = events_conn.cursor()
+
+    weather_conn = sqlite3.connect(weather_db)
     weather_cur = weather_conn.cursor()
+
+    # Connect to the new combined database
+    combined_conn = sqlite3.connect(combined_db)
     combined_cur = combined_conn.cursor()
 
-    # Create combined event_weather table
+    # Create the combined table
     combined_cur.execute('''
-        CREATE TABLE IF NOT EXISTS event_weather (
+        CREATE TABLE IF NOT EXISTS combined_events_weather (
             event_id TEXT PRIMARY KEY,
             event_date TEXT,
             event_name TEXT,
@@ -26,29 +28,27 @@ def combine_databases(events_db, weather_db, combined_db):
         )
     ''')
 
-    # Join events and weather on date, select matching records
+    # Join events with weather based on event_date = weather.date
     events_cur.execute('''
         SELECT e.event_id, e.event_date, e.event_name, e.location, e.event_type, e.attendance,
                w.precipitation_hours, w.weather_code, w.temp_max, w.temp_min
         FROM events e
-        JOIN weather w ON e.event_date = w.date
+        LEFT JOIN weather w ON e.event_date = w.date
     ''')
 
-    joined_data = events_cur.fetchall()
+    combined_data = events_cur.fetchall()
 
-    # Insert joined data into the combined table
-    for row in joined_data:
+    for row in combined_data:
         combined_cur.execute('''
-            INSERT OR IGNORE INTO event_weather
-            (event_id, event_date, event_name, location, event_type, attendance,
+            INSERT OR REPLACE INTO combined_events_weather 
+            (event_id, event_date, event_name, location, event_type, attendance, 
              precipitation_hours, weather_code, temp_max, temp_min)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', row)
 
     combined_conn.commit()
 
-    # Print how many rows were added
-    print(f"{len(joined_data)} combined event-weather rows added to {combined_db}.")
+    print(f"{len(combined_data)} records combined successfully!")
 
     # Close connections
     events_conn.close()
@@ -57,8 +57,8 @@ def combine_databases(events_db, weather_db, combined_db):
 
 def main():
     events_db = 'events_data.db'
-    weather_db = 'weather_events.db'
-    combined_db = 'combined_event_weather.db'
+    weather_db = 'weather.db'
+    combined_db = 'combined_data.db'
 
     combine_databases(events_db, weather_db, combined_db)
 
