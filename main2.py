@@ -50,7 +50,7 @@ def setup_database(db_name):
     return conn, cur
 
 # ----- Fetch events data -----
-def fetch_events(limit=25):
+def fetch_events(limit=25, offset=0):
     response = requests.get(
         url="https://api.predicthq.com/v1/events",
         headers={"Authorization": "Bearer 2ouGKn-PHtl_8cCL6NkXCXORqU2sVgVodDMUMAfs"},
@@ -60,10 +60,12 @@ def fetch_events(limit=25):
             "location_around.offset": "50km",
             "category": "concerts",
             "end.lte": "2025-04-16",
-            "start.gte": "2025-01-01"
+            "start.gte": "2025-01-01",
+            "offset": offset
         }
     )
     events = response.json()['results']
+    print(f"Fetched {len(events)} events with offset {offset}")
 
     event_data = []
     for event in events:
@@ -79,12 +81,16 @@ def fetch_events(limit=25):
 
 # ----- Insert event data -----
 def insert_event_data(cur, events):
-
+    new_events_added = 0
+    # cur.execute('DELETE FROM events')
     for event in events:
         cur.execute('''
             INSERT OR IGNORE INTO events (event_id, event_date, event_name, location, event_type, attendance)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', event)
+        if cur.rowcount > 0:
+                new_events_added += 1
+    return new_events_added
 
 # ----- Fetch weather data -----
 def fetch_weather():
@@ -129,15 +135,31 @@ def main():
     db_name = 'combined_data1.db'
     conn, cur = setup_database(db_name)
 
-    # Fetch and insert events
+    # # Fetch and insert events
+    # Check how many events are already in the database
     cur.execute('SELECT COUNT(*) FROM events')
     num_curr_entries = cur.fetchone()[0]
-    print(num_curr_entries)
-    new_numm_entries = num_curr_entries + 25
-    print(new_numm_entries)
-    events = fetch_events(limit=new_numm_entries)
-    insert_event_data(cur, events)
-    print(f"{len(events)} events added.")
+    print(f"Current events in database: {num_curr_entries}")
+
+    # Calculate how many new events to fetch
+    limit = 25
+    offset = num_curr_entries
+
+    # Fetch next 25 events based on the offset
+    new_events = fetch_events(limit=limit, offset=offset)
+
+    # If no new events are returned, stop
+    if not new_events:
+        print("No new events to fetch.")
+    else:
+        # Insert the new events
+        insert_event_data(cur, new_events)
+        print(f"{len(new_events)} new events added.")
+    
+    # Display total number of events now in the database
+    cur.execute('SELECT COUNT(*) FROM events')
+    total_events = cur.fetchone()[0]
+    print(f"Total events in database: {total_events}")
 
     # Fetch and insert weather
     weather = fetch_weather()
