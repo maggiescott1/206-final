@@ -19,7 +19,6 @@ def setup_database(db_name):
     ''')
 
     # Weather table
-    cur.execute('''DROP TABLE IF EXISTS weather''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS weather (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,6 +79,7 @@ def fetch_events(limit=25):
 
 # ----- Insert event data -----
 def insert_event_data(cur, events):
+
     for event in events:
         cur.execute('''
             INSERT OR IGNORE INTO events (event_id, event_date, event_name, location, event_type, attendance)
@@ -130,7 +130,12 @@ def main():
     conn, cur = setup_database(db_name)
 
     # Fetch and insert events
-    events = fetch_events(limit=25)
+    cur.execute('SELECT COUNT(*) FROM events')
+    num_curr_entries = cur.fetchone()[0]
+    print(num_curr_entries)
+    new_numm_entries = num_curr_entries + 25
+    print(new_numm_entries)
+    events = fetch_events(limit=new_numm_entries)
     insert_event_data(cur, events)
     print(f"{len(events)} events added.")
 
