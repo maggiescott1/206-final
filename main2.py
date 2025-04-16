@@ -19,6 +19,7 @@ def setup_database(db_name):
     ''')
 
     # Weather table
+    cur.execute('''DROP TABLE IF EXISTS weather''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS weather (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,7 +107,7 @@ def fetch_weather():
 def insert_weather_data(cur, weather):
     for day in weather:
         cur.execute('''
-            INSERT INTO weather (date, precipitation_hours, weather_code, temp_max, temp_min)
+            INSERT OR IGNORE INTO weather (date, precipitation_hours, weather_code, temp_max, temp_min)
             VALUES (?, ?, ?, ?, ?)
         ''', day)
 
