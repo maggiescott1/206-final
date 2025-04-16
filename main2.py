@@ -132,7 +132,7 @@ def combine_data(cur):
 
 # ----- Main workflow -----
 def main():
-    db_name = 'combined_data1.db'
+    db_name = 'combined_data.db'
     conn, cur = setup_database(db_name)
 
     # # Fetch and insert events
