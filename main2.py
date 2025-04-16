@@ -57,9 +57,10 @@ def fetch_events(limit=25):
         params={
             "limit": limit,
             "location_around.origin": "42.3297,-83.0425",
+            "location_around.offset": "50km",
             "category": "concerts",
-            "end.lte": "2025-03-31",
-            "start.gte": "2025-02-01"
+            "end.lte": "2025-04-16",
+            "start.gte": "2025-01-01"
         }
     )
     events = response.json()['results']
@@ -111,10 +112,10 @@ def insert_weather_data(cur, weather):
 
 # ----- Combine event and weather data -----
 def combine_data(cur):
-    cur.execute('DELETE FROM combined_events_weather')  # clear if exists
+    # cur.execute('DELETE FROM combined_events_weather')  # clear if exists
 
     cur.execute('''
-        INSERT INTO combined_events_weather
+        INSERT OR IGNORE INTO combined_events_weather
         SELECT 
             e.event_id, e.event_date, e.event_name, e.location, e.event_type, e.attendance,
             w.precipitation_hours, w.weather_code, w.temp_max, w.temp_min
@@ -124,7 +125,7 @@ def combine_data(cur):
 
 # ----- Main workflow -----
 def main():
-    db_name = 'combined_data.db'
+    db_name = 'combined_data1.db'
     conn, cur = setup_database(db_name)
 
     # Fetch and insert events
@@ -146,4 +147,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
