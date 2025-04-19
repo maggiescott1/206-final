@@ -53,7 +53,7 @@ def setup_database(db_name):
 def fetch_events(limit=25, offset=0):
     response = requests.get(
         url="https://api.predicthq.com/v1/events",
-        headers={"Authorization": "Bearer 2ouGKn-PHtl_8cCL6NkXCXORqU2sVgVodDMUMAfs"},
+        headers={"Authorization": "Bearer iA-z6ZEwp71oHlRYQf_-XcaeAB3BtJZAqJ94OR3k"},
         params={
             "limit": limit,
             "location_around.origin": "42.3297,-83.0425",
