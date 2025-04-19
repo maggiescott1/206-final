@@ -20,7 +20,7 @@ precip_sums = data["daily"]["precipitation_sum"]
 apparent_temp_means = data["daily"]["apparent_temperature_mean"]
 
 # Connect to SQLite
-conn = sqlite3.connect("weather.db")
+conn = sqlite3.connect("combined_data1.db")
 cur = conn.cursor()
 
 # Create table
@@ -52,4 +52,4 @@ for i in range(len(dates)):
 conn.commit()
 conn.close()
 
-print("Weather data successfully inserted into weather.db")
+print("Weather data successfully inserted into combined_data1.db")
