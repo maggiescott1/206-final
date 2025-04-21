@@ -1,7 +1,7 @@
 import requests
 import sqlite3
 
-## ai usage: chat helped create the original tables- that is why our weather table has the primary key autoincrement (creating the sqlite_sequence table in the db)
+## ai usage: chat helped create the original tables in the setup database function- that is why our weather table has the primary key autoincrement (creating the sqlite_sequence table in the db)
 ## chat helped me resolve the duplicate strings with the address_id table and foreign key
 
 ## SET UP DATABASE WITH TABLES
@@ -10,7 +10,7 @@ def setup_database(db_name):
     cur = conn.cursor()
 
     ## Events table
-    cur.execute("DROP TABLE IF EXISTS events")
+    # cur.execute("DROP TABLE IF EXISTS events")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS events (
             event_id TEXT PRIMARY KEY,
@@ -42,7 +42,7 @@ def setup_database(db_name):
     ''')
 
     ## Combined table
-    cur.execute("DROP TABLE IF EXISTS combined_events_weather")
+    # cur.execute("DROP TABLE IF EXISTS combined_events_weather")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS combined_events_weather (
             event_id TEXT PRIMARY KEY,
@@ -68,7 +68,7 @@ def fetch_events(limit=25, offset=0):
         params={
             "limit": limit,
             "location_around.origin": "42.3297,-83.0425",
-            "location_around.offset": "50km",
+            "location_around.offset": "5km",
             "category": "concerts",
             "end.lte": "2025-04-16",
             "start.gte": "2025-01-01",
@@ -150,7 +150,7 @@ def insert_weather_data(cur, weather):
 
 ## Combine event and weather data
 def combine_data(cur):
-    cur.execute('DELETE FROM combined_events_weather')  # clear if exists
+    # cur.execute('DELETE FROM combined_events_weather')  # clear if exists
 
     cur.execute('''
         INSERT OR IGNORE INTO combined_events_weather
