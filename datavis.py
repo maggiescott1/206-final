@@ -69,7 +69,7 @@ for att, temp in zip(attendance, temp_mean):
     else:
         temp_bins['Hot (>85°F)'].append(att)
 
-# Calculate averages
+# Calculate averages [had chatgpt help me understand how to do this part]
 categories = list(temp_bins.keys())
 averages = [np.mean(temp_bins[cat]) if temp_bins[cat] else 0 for cat in categories]
 
