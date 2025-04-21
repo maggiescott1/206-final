@@ -1,66 +1,77 @@
 import requests
 import sqlite3
 
-# ----- Setup database -----
+## ai usage: chat helped create the original tables in the setup database function- that is why our weather table has the primary key autoincrement (creating the sqlite_sequence table in the db)
+## chat helped me resolve the duplicate strings with the address_id table and foreign key
+
+## SET UP DATABASE WITH TABLES
 def setup_database(db_name):
     conn = sqlite3.connect(db_name)
     cur = conn.cursor()
 
-    # Events table
+    ## Events table
     # cur.execute("DROP TABLE IF EXISTS events")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS events (
             event_id TEXT PRIMARY KEY,
             event_date TEXT,
             event_name TEXT,
-            location TEXT,
-            event_type TEXT,
-            attendance INTEGER
+            address_id INTEGER,
+            attendance INTEGER,
+            FOREIGN KEY (address_id) REFERENCES addresses(address_id)
         )
     ''')
 
-    # # Weather table
+    ## Weather table
     # cur.execute("DROP TABLE IF EXISTS weather")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS weather (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT,
+            date TEXT PRIMARY KEY,
             temp_mean REAL,
             precipitation_sum REAL,
             apparent_temp_mean REAL
         )
     ''')
 
-    # Combined table
+    ## address id table
+    # cur.execute("DROP TABLE IF EXISTS addresses")
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS addresses (
+            address_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            address TEXT UNIQUE
+    )
+    ''')
+
+    ## Combined table
     # cur.execute("DROP TABLE IF EXISTS combined_events_weather")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS combined_events_weather (
             event_id TEXT PRIMARY KEY,
             event_date TEXT,
             event_name TEXT,
-            location TEXT,
+            address_id INTEGER,
             attendance INTEGER,
             precipitation_sum REAL,
             temp_mean REAL,
-            apparent_temp_mean REAL
+            apparent_temp_mean REAL,
+            FOREIGN KEY (address_id) REFERENCES addresses(address_id)
         )
     ''')
 
     conn.commit()
     return conn, cur
 
-# ----- Fetch events data -----
+## events data from api
 def fetch_events(limit=25, offset=0):
     response = requests.get(
         url="https://api.predicthq.com/v1/events",
         headers={"Authorization": "Bearer iA-z6ZEwp71oHlRYQf_-XcaeAB3BtJZAqJ94OR3k"},
         params={
             "limit": limit,
-            "location_around.origin": "42.3297,-83.0425",
-            "location_around.offset": "50km",
             "category": "concerts",
             "end.lte": "2025-04-16",
             "start.gte": "2025-01-01",
+            "within": "5km@42.3297,-83.0425",
             "offset": offset
         }
     )
@@ -78,20 +89,35 @@ def fetch_events(limit=25, offset=0):
         ))
     return event_data
 
-# ----- Insert event data -----
+## insert event data into the database
 def insert_event_data(cur, events):
     new_events_added = 0
     # cur.execute('DELETE FROM events')
     for event in events:
+        event_id, event_date, event_name, location, attendance = event
+
+        ## select or get address_id
+        cur.execute('SELECT address_id FROM addresses WHERE address = ?', (location,))
+        result = cur.fetchone()
+        # print(result)
+
+        if result:
+            address_id = result[0]
+        else:
+            cur.execute('INSERT INTO addresses (address) VALUES (?)', (location,))
+            address_id = cur.lastrowid
+
+        # Insert event with address_id instead of location string
         cur.execute('''
-            INSERT OR IGNORE INTO events (event_id, event_date, event_name, location, attendance)
+            INSERT OR IGNORE INTO events (event_id, event_date, event_name, address_id, attendance)
             VALUES (?, ?, ?, ?, ?)
-        ''', event)
+        ''', (event_id, event_date, event_name, address_id, attendance))
+
         if cur.rowcount > 0:
                 new_events_added += 1
     return new_events_added
 
-# ----- Fetch weather data -----
+## weather data from api
 def fetch_weather():
     url = "https://archive-api.open-meteo.com/v1/archive?latitude=42.3314&longitude=-83.0457&start_date=2025-01-01&end_date=2025-04-16&daily=temperature_2m_mean,precipitation_sum,apparent_temperature_mean&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&utm_source=chatgpt.com"
 
@@ -114,7 +140,7 @@ def fetch_weather():
 
     return weather_data
 
-# ----- Insert weather data -----
+## insert weather data into the database
 def insert_weather_data(cur, weather):
     for day in weather:
         cur.execute('''
@@ -122,46 +148,42 @@ def insert_weather_data(cur, weather):
             VALUES (?, ?, ?, ?)
         ''', day)
 
-# ----- Combine event and weather data -----
+## Combine event and weather data
 def combine_data(cur):
     # cur.execute('DELETE FROM combined_events_weather')  # clear if exists
 
     cur.execute('''
         INSERT OR IGNORE INTO combined_events_weather
         SELECT 
-            e.event_id, e.event_date, e.event_name, e.location, e.attendance,
+            e.event_id, e.event_date, e.event_name, e.address_id, e.attendance,
             w.precipitation_sum, w.temp_mean, w.apparent_temp_mean
         FROM events e
         LEFT JOIN weather w ON e.event_date = w.date
     ''')
 
-# ----- Main workflow -----
 def main():
     db_name = 'combined_data1.db'
     conn, cur = setup_database(db_name)
 
-    # # Fetch and insert events
-    # Check how many events are already in the database
+    ## count current events in event table
     cur.execute('SELECT COUNT(*) FROM events')
     num_curr_entries = cur.fetchone()[0]
     print(f"Current events in database: {num_curr_entries}")
 
-    # Calculate how many new events to fetch
+    ## limit to 25 new entries at a time based on offset
     limit = 25
     offset = num_curr_entries
 
-    # Fetch next 25 events based on the offset
     new_events = fetch_events(limit=limit, offset=offset)
 
-    # If no new events are returned, stop
+    ## If no new events are returned, stop
     if not new_events:
         print("No new events to fetch.")
     else:
-        # Insert the new events
         insert_event_data(cur, new_events)
         print(f"{len(new_events)} new events added.")
     
-    # Display total number of events now in the database
+    ## count current events in table NOW
     cur.execute('SELECT COUNT(*) FROM events')
     total_events = cur.fetchone()[0]
     print(f"Total events in database: {total_events}")
