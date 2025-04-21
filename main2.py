@@ -23,7 +23,7 @@ def setup_database(db_name):
     ''')
 
     ## Weather table
-    #cur.execute("DROP TABLE IF EXISTS weather")
+    # cur.execute("DROP TABLE IF EXISTS weather")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS weather (
             date TEXT PRIMARY KEY,
@@ -34,6 +34,7 @@ def setup_database(db_name):
     ''')
 
     ## address id table
+    # cur.execute("DROP TABLE IF EXISTS addresses")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS addresses (
             address_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,11 +68,10 @@ def fetch_events(limit=25, offset=0):
         headers={"Authorization": "Bearer iA-z6ZEwp71oHlRYQf_-XcaeAB3BtJZAqJ94OR3k"},
         params={
             "limit": limit,
-            "location_around.origin": "42.3297,-83.0425",
-            "location_around.offset": "5km",
             "category": "concerts",
             "end.lte": "2025-04-16",
             "start.gte": "2025-01-01",
+            "within": "5km@42.3297,-83.0425",
             "offset": offset
         }
     )
