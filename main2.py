@@ -10,7 +10,6 @@ def setup_database(db_name):
     cur = conn.cursor()
 
     ## Events table
-    # cur.execute("DROP TABLE IF EXISTS events")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS events (
             event_id TEXT PRIMARY KEY,
@@ -23,7 +22,6 @@ def setup_database(db_name):
     ''')
 
     ## Weather table
-    # cur.execute("DROP TABLE IF EXISTS weather")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS weather (
             date TEXT PRIMARY KEY,
@@ -34,7 +32,6 @@ def setup_database(db_name):
     ''')
 
     ## address id table
-    # cur.execute("DROP TABLE IF EXISTS addresses")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS addresses (
             address_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +40,6 @@ def setup_database(db_name):
     ''')
 
     ## Combined table
-    # cur.execute("DROP TABLE IF EXISTS combined_events_weather")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS combined_events_weather (
             event_id TEXT PRIMARY KEY,
