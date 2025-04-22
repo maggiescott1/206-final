@@ -10,11 +10,12 @@ def setup_database(db_name):
     cur = conn.cursor()
 
     ## Events table
+    # cur.execute('''DROP TABLE IF EXISTS events''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS events (
             event_id TEXT PRIMARY KEY,
             event_date TEXT,
-            event_name TEXT,
+            event_name_id INTEGER,
             address_id INTEGER,
             attendance INTEGER,
             FOREIGN KEY (address_id) REFERENCES addresses(address_id)
@@ -22,6 +23,7 @@ def setup_database(db_name):
     ''')
 
     ## Weather table
+    # cur.execute('''DROP TABLE IF EXISTS weather''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS weather (
             date TEXT PRIMARY KEY,
@@ -32,6 +34,7 @@ def setup_database(db_name):
     ''')
 
     ## address id table
+    # cur.execute('''DROP TABLE IF EXISTS addresses''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS addresses (
             address_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,12 +42,22 @@ def setup_database(db_name):
     )
     ''')
 
+    ## event name id table
+    # cur.execute('''DROP TABLE IF EXISTS event_names''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS event_names (
+            event_name_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_name TEXT UNIQUE
+    )
+    ''')
+
     ## Combined table
+    # cur.execute('''DROP TABLE IF EXISTS combined_events_weather''')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS combined_events_weather (
             event_id TEXT PRIMARY KEY,
             event_date TEXT,
-            event_name TEXT,
+            event_name_id INTEGER,
             address_id INTEGER,
             attendance INTEGER,
             precipitation_sum REAL,
@@ -103,11 +116,21 @@ def insert_event_data(cur, events):
             cur.execute('INSERT INTO addresses (address) VALUES (?)', (location,))
             address_id = cur.lastrowid
 
+        cur.execute('SELECT event_name_id FROM event_names WHERE event_name = ?', (event_name,))
+        result = cur.fetchone()
+        # print(result)
+
+        if result:
+            event_name_id = result[0]
+        else:
+            cur.execute('INSERT INTO event_names (event_name) VALUES (?)', (event_name,))
+            event_name_id = cur.lastrowid
+
         # Insert event with address_id instead of location string
         cur.execute('''
-            INSERT OR IGNORE INTO events (event_id, event_date, event_name, address_id, attendance)
+            INSERT OR IGNORE INTO events (event_id, event_date, event_name_id, address_id, attendance)
             VALUES (?, ?, ?, ?, ?)
-        ''', (event_id, event_date, event_name, address_id, attendance))
+        ''', (event_id, event_date, event_name_id, address_id, attendance))
 
         if cur.rowcount > 0:
                 new_events_added += 1
@@ -133,6 +156,9 @@ def fetch_weather():
             precip_sums[i],
             apparent_temp_means[i]
         ))
+    
+    # Sort weather_data in descending order by date
+    weather_data.sort(key=lambda x: x[0], reverse=True)
 
     return weather_data
 
@@ -151,10 +177,11 @@ def combine_data(cur):
     cur.execute('''
         INSERT OR IGNORE INTO combined_events_weather
         SELECT 
-            e.event_id, e.event_date, e.event_name, e.address_id, e.attendance,
+            e.event_id, e.event_date, e.event_name_id, e.address_id, e.attendance,
             w.precipitation_sum, w.temp_mean, w.apparent_temp_mean
         FROM events e
-        LEFT JOIN weather w ON e.event_date = w.date
+                
+        LEFT JOIN weather w ON DATE(e.event_date) = DATE(w.date)
     ''')
 
 def main():
@@ -186,8 +213,28 @@ def main():
 
     # Fetch and insert weather
     weather = fetch_weather()
-    insert_weather_data(cur, weather)
-    print(f"{len(weather)} weather records added.")
+
+    ##LIMITING WEATHER TABLE TO 25 PER RUN, SAME LOGIC AS EVENTS
+
+    # Count how many weather records are already in the database
+    cur.execute('SELECT COUNT(*) FROM weather')
+    num_weather_entries = cur.fetchone()[0]
+    print(f"Current weather records in database: {num_weather_entries}")
+
+    # Limit to 25 new weather records per run - USING SLICING, NOT OFFSET
+    limit = 25
+    weather_to_add = weather[num_weather_entries:num_weather_entries+limit]
+
+    # If there’s no new data left to add
+    if not weather_to_add:
+        print("No new weather data to fetch.")
+    else:
+        insert_weather_data(cur, weather_to_add)
+        print(f"{len(weather_to_add)} new weather records added.")
+
+    cur.execute('SELECT COUNT(*) FROM weather')
+    total_weather = cur.fetchone()[0]
+    print(f"Total weather records in database: {total_weather}")
 
     # Combine into one table
     combine_data(cur)
