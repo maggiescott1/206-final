@@ -21,7 +21,7 @@ def calculate_averages():
     rows = cur.fetchall()
     conn.close()
 
-    # Data prep
+    
     attendance = [row[0] for row in rows]
     temp_mean = [row[1] for row in rows]
     precipitation = [row[2] for row in rows]
@@ -30,32 +30,46 @@ def calculate_averages():
 
 def create_visualizations(attendance, temp_mean, precipitation):
 
-    # --- Vis 1: Scatter plot showing no strong correlation (Attendance vs Temp) ---
+    # scaterplot (Attendance vs Temp) 
     plt.figure(figsize=(10, 6))
     plt.scatter(temp_mean, attendance, alpha=0.4, edgecolor='gray', color='slateblue')
-    
+
     plt.title('Attendance vs. Temperature', fontsize=14)
     plt.xlabel('Mean Temperature (°F)', fontsize=12)
     plt.ylabel('Attendance', fontsize=12)
     plt.grid(True, linestyle=':', linewidth=0.7)
+    
+
+    plt.xlim(0, 70)      
+    plt.ylim(0, 5000)     
+
+
     plt.tight_layout()
     plt.savefig('attendance_vs_temp.png')
     plt.show()
 
-    # --- Vis 2: Bubble plot (Precipitation vs Attendance) ---
+
+    # Bubble Plot (Precipitation vs Attendance) 
     plt.figure(figsize=(10, 6))
-    bubble_size = [p * 150 for p in precipitation]  # scale precipitation to size
+    bubble_size = [(p + 0.2) * 200 for p in precipitation]
     plt.scatter(precipitation, attendance, s=bubble_size, alpha=0.5, c='teal', edgecolor='gray')
 
     plt.title('Attendance vs. Precipitation (Bubble Size = Precip)', fontsize=14)
     plt.xlabel('Precipitation (inches)', fontsize=12)
     plt.ylabel('Attendance', fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.5)
+
+ 
+    plt.xlim(-0.05, 1.4)     
+    plt.ylim(0, 4000)      
+
+
     plt.tight_layout()
     plt.savefig('bubble_attendance_vs_precip.png')
     plt.show()
 
-    # --- Vis 3: Horizontal Bar (Average Attendance by Temp Range) ---
+
+    # Horizontal Bar (Average Attendance by Temp Range) 
     temp_bins = {
         'Cold (≤40°F)': [],
         'Cool (41–55°F)': [],
